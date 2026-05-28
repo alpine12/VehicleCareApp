@@ -1,0 +1,33 @@
+# Gradle files
+.gradle/
+build/
+
+# IDE files (Android Studio / IntelliJ)
+.idea/
+*.iml
+*.ipr
+*.iws
+local.properties
+.navigation/
+
+# Android Studio specific
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aar
+*.ap_
+*.dex
+
+# Secrets & Signing
+*.jks
+*.keystore
+# google-services.json # Uncomment if using Firebase and want to keep it private
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Project specific
+screenshoot/
+release/
