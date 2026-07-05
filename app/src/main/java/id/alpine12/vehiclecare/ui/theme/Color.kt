@@ -2,17 +2,29 @@ package id.alpine12.vehiclecare.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Blue80 = Color(0xFFB3D4FF)
-val Blue40 = Color(0xFF0066CC)
-val Blue20 = Color(0xFF003380)
-val Orange80 = Color(0xFFFFB380)
-val Orange40 = Color(0xFFCC6600)
-val Green80 = Color(0xFF80D9B3)
-val Green40 = Color(0xFF00804D)
-val Gray10 = Color(0xFF1A1A1A)
-val Gray90 = Color(0xFFE6E6E6)
-val Gray95 = Color(0xFFF5F5F5)
-val SurfaceLight = Color(0xFFFFFBFE)
-val SurfaceDark = Color(0xFF1C1B1F)
+// Primary: #2563EB
+val PrimaryBlue = Color(0xFF2563EB)
+val PrimaryLight = Color(0xFFD1E0FF)
+val PrimaryDark = Color(0xFF001B3D)
+
+// Secondary: #334155
+val SecondarySlate = Color(0xFF334155)
+val SecondaryLight = Color(0xFFCBD5E1)
+val SecondaryDark = Color(0xFF0F172A)
+
+// Tertiary: #0F172A
+val TertiaryDark = Color(0xFF0F172A)
+val TertiaryLight = Color(0xFF94A3B8)
+
+// Neutral: #0F172A
+val NeutralDark = Color(0xFF0F172A)
+val NeutralLight = Color(0xFFF1F5F9)
+
+val SurfaceLight = Color(0xFFF8FAFC)
+val SurfaceDark = Color(0xFF0F172A)
 val ErrorLight = Color(0xFFBA1A1A)
 val ErrorDark = Color(0xFFFFB4AB)
+
+val Gray10 = Color(0xFF0F172A)
+val Gray90 = Color(0xFFF1F5F9)
+val Gray95 = Color(0xFFF8FAFC)
