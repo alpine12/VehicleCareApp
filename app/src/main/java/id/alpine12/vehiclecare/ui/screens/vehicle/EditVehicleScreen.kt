@@ -79,6 +79,7 @@ fun EditVehicleScreen(
             OutlinedTextField(value = state.year, onValueChange = viewModel::updateYear, label = { Text("Tahun *") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
             OutlinedTextField(value = state.licensePlate, onValueChange = viewModel::updateLicensePlate, label = { Text("Plat Nomor (Opsional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             OutlinedTextField(value = state.currentKm, onValueChange = viewModel::updateCurrentKm, label = { Text("Kilometer Saat Ini *") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), suffix = { Text("km") }, singleLine = true)
+            OutlinedTextField(value = state.oilIntervalKm, onValueChange = viewModel::updateOilIntervalKm, label = { Text("Interval Ganti Oli") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), suffix = { Text("km") }, singleLine = true, supportingText = { Text("Jarak km untuk reminder ganti oli berikutnya") })
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { viewModel.saveVehicle(vehicleId) }, modifier = Modifier.fillMaxWidth(), enabled = !state.isLoading) {
                 Text(if (state.isLoading) "Menyimpan..." else "Update Kendaraan", modifier = Modifier.padding(vertical = 8.dp))

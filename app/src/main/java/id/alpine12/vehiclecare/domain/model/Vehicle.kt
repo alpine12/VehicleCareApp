@@ -9,6 +9,7 @@ data class Vehicle(
     val year: Int,
     val licensePlate: String = "",
     val currentKm: Int,
+    val oilIntervalKm: Int = 5000,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

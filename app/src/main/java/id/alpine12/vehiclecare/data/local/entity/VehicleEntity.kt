@@ -14,6 +14,7 @@ data class VehicleEntity(
     val year: Int,
     val licensePlate: String,
     val currentKm: Int,
+    val oilIntervalKm: Int = 5000,
     val createdAt: Long,
     val updatedAt: Long
 )

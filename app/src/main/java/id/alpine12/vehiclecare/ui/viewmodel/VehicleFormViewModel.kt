@@ -21,6 +21,7 @@ data class VehicleFormState(
     val year: String = "",
     val licensePlate: String = "",
     val currentKm: String = "",
+    val oilIntervalKm: String = "5000",
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
     val errorMessage: String? = null
@@ -48,6 +49,7 @@ class VehicleFormViewModel @Inject constructor(
                         year = v.year.toString(),
                         licensePlate = v.licensePlate,
                         currentKm = v.currentKm.toString(),
+                        oilIntervalKm = v.oilIntervalKm.toString(),
                         isLoading = false
                     )
                 } else {
@@ -85,6 +87,10 @@ class VehicleFormViewModel @Inject constructor(
         _state.update { it.copy(currentKm = km) }
     }
 
+    fun updateOilIntervalKm(interval: String) {
+        _state.update { it.copy(oilIntervalKm = interval) }
+    }
+
     fun saveVehicle(vehicleId: Long? = null) {
         val s = _state.value
         if (s.name.isBlank() || s.brand.isBlank() || s.model.isBlank() || s.year.isBlank() || s.currentKm.isBlank()) {
@@ -93,6 +99,7 @@ class VehicleFormViewModel @Inject constructor(
         }
         val year = s.year.toIntOrNull()
         val km = s.currentKm.toIntOrNull()
+        val oilInterval = s.oilIntervalKm.toIntOrNull() ?: 5000
         if (year == null || km == null) {
             _state.update { it.copy(errorMessage = "Format tahun atau km tidak valid") }
             return
@@ -101,6 +108,12 @@ class VehicleFormViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
             try {
+                val currentTime = System.currentTimeMillis()
+                // Load existing vehicle to preserve createdAt when updating
+                val existingVehicle = if (vehicleId != null) {
+                    vehicleRepository.getVehicleByIdOnce(vehicleId)
+                } else null
+
                 val v = Vehicle(
                     id = vehicleId ?: 0,
                     name = s.name,
@@ -109,7 +122,10 @@ class VehicleFormViewModel @Inject constructor(
                     model = s.model,
                     year = year,
                     licensePlate = s.licensePlate,
-                    currentKm = km
+                    currentKm = km,
+                    oilIntervalKm = oilInterval,
+                    createdAt = existingVehicle?.createdAt ?: currentTime,
+                    updatedAt = currentTime
                 )
                 if (vehicleId != null) {
                     vehicleRepository.updateVehicle(v)
