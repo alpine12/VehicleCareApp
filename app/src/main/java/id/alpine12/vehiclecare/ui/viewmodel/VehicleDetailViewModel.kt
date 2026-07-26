@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.alpine12.vehiclecare.domain.model.Reminder
 import id.alpine12.vehiclecare.domain.model.ServiceRecord
+import id.alpine12.vehiclecare.domain.model.ServiceType
 import id.alpine12.vehiclecare.domain.model.Vehicle
 import id.alpine12.vehiclecare.domain.repository.ReminderRepository
 import id.alpine12.vehiclecare.domain.repository.ServiceRecordRepository
@@ -11,14 +12,11 @@ import id.alpine12.vehiclecare.domain.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,6 +25,10 @@ data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
     val serviceRecords: List<ServiceRecord> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
+    val lastOilServiceKm: Long? = null,
+    val lastOilServiceDate: Long? = null,
+    val totalServiceCount: Int = 0,
+    val totalServiceCost: Long = 0,
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val showAllServices: Boolean = false
@@ -62,13 +64,23 @@ class VehicleDetailViewModel @Inject constructor(
                 reminderRepository.getRemindersByVehicle(vehicleId)
                     .catch { /* ignore reminder errors */ }
             ) { vehicle, services, reminders ->
+                // Find last oil service
+                val oilServices = services.filter { it.type == ServiceType.GANTI_OLI }
+                val lastOilService = oilServices.maxByOrNull { it.date }
+
+                // Calculate total stats
+                val totalCost = services.sumOf { it.cost?.toLong() ?: 0L }
+
                 _uiState.update {
                     it.copy(
                         vehicle = vehicle,
                         serviceRecords = services,
                         reminders = reminders,
-                        isLoading = false,
-                        errorMessage = if (vehicle == null) null else null
+                        lastOilServiceKm = lastOilService?.kilometer?.toLong(),
+                        lastOilServiceDate = lastOilService?.date,
+                        totalServiceCount = services.size,
+                        totalServiceCost = totalCost,
+                        isLoading = false
                     )
                 }
             }.collect()

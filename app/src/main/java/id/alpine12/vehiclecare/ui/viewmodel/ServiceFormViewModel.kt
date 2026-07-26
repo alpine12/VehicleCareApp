@@ -80,7 +80,7 @@ class ServiceFormViewModel @Inject constructor(
                     date = s.date,
                     kilometer = km,
                     productBrand = s.productBrand,
-                    cost = s.cost.toIntOrNull() ?: 0,
+                    cost = if (s.cost.isBlank()) null else s.cost.toIntOrNull(),
                     workshop = s.workshop,
                     notes = s.notes
                 )

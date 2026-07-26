@@ -1,6 +1,8 @@
 package id.alpine12.vehiclecare.ui.screens.stats
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +25,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.DirectionsCar
@@ -41,7 +47,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,7 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -64,6 +72,9 @@ import id.alpine12.vehiclecare.domain.model.VehicleType
 import id.alpine12.vehiclecare.ui.components.EmptyState
 import id.alpine12.vehiclecare.ui.components.ErrorState
 import id.alpine12.vehiclecare.ui.components.LoadingList
+import id.alpine12.vehiclecare.ui.theme.PrimaryBlue
+import id.alpine12.vehiclecare.ui.theme.SuccessGreen
+import id.alpine12.vehiclecare.ui.theme.WarningAmber
 import id.alpine12.vehiclecare.ui.viewmodel.StatsUiState
 import id.alpine12.vehiclecare.ui.viewmodel.StatsViewModel
 import id.alpine12.vehiclecare.ui.viewmodel.VehicleStats
@@ -157,36 +168,15 @@ private fun StatsContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                    // Summary Cards
+                    // Hero Stats Card
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            SummaryStatCard(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Outlined.DirectionsCar,
-                                value = uiState.totalVehicles.toString(),
-                                label = "Kendaraan",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            SummaryStatCard(
-                                modifier = Modifier.weight(1f),
-                                icon = Icons.Outlined.Build,
-                                value = uiState.totalServices.toString(),
-                                label = "Total Servis",
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        }
-                    }
-
-                    // Total Cost Card
-                    item {
-                        CostSummaryCard(
+                        HeroStatsCard(
+                            totalVehicles = uiState.totalVehicles,
+                            totalServices = uiState.totalServices,
                             totalCost = uiState.totalCost,
                             numberFormat = numberFormat
                         )
@@ -206,7 +196,10 @@ private fun StatsContent(
                     // Per-Vehicle Stats
                     if (uiState.vehicleStats.isNotEmpty()) {
                         item {
-                            SectionTitle(text = "Per Kendaraan")
+                            SectionTitle(
+                                text = "Per Kendaraan",
+                                icon = Icons.Default.DirectionsCar
+                            )
                         }
 
                         val filteredStats = if (uiState.selectedVehicleId != null) {
@@ -216,7 +209,7 @@ private fun StatsContent(
                         }
 
                         items(filteredStats) { stat ->
-                            VehicleStatsCard(
+                            VehicleStatsCardModern(
                                 vehicleStats = stat,
                                 numberFormat = numberFormat
                             )
@@ -226,20 +219,15 @@ private fun StatsContent(
                     // Top Service Types Chart
                     if (uiState.topServiceTypes.isNotEmpty()) {
                         item {
-                            SectionTitle(text = "Servis Terpopuler")
-                        }
-
-                        item {
-                            ServiceTypeChart(
-                                serviceTypes = uiState.topServiceTypes,
-                                totalServices = uiState.totalServices
+                            SectionTitle(
+                                text = "Servis Terpopuler",
+                                icon = Icons.Default.Analytics
                             )
                         }
 
-                        items(uiState.topServiceTypes) { (type, count) ->
-                            ServiceTypeRow(
-                                serviceType = type,
-                                count = count,
+                        item {
+                            ServiceTypeChartModern(
+                                serviceTypes = uiState.topServiceTypes,
                                 totalServices = uiState.totalServices,
                                 numberFormat = numberFormat
                             )
@@ -254,98 +242,151 @@ private fun StatsContent(
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 8.dp)
-    )
+private fun SectionTitle(
+    text: String,
+    icon: ImageVector? = null
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+    ) {
+        icon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+    }
 }
 
 @Composable
-private fun SummaryStatCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: Color
+private fun HeroStatsCard(
+    totalVehicles: Int,
+    totalServices: Int,
+    totalCost: Long,
+    numberFormat: NumberFormat
 ) {
     Card(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            PrimaryBlue,
+                            PrimaryBlue.copy(alpha = 0.85f)
+                        )
+                    )
+                )
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    StatItem(
+                        icon = Icons.Outlined.DirectionsCar,
+                        value = totalVehicles.toString(),
+                        label = "Kendaraan"
+                    )
+                    StatItem(
+                        icon = Icons.Outlined.Build,
+                        value = totalServices.toString(),
+                        label = "Total Servis"
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Total Pengeluaran",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Rp ${numberFormat.format(totalCost)}",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Outlined.AttachMoney,
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                            tint = Color.White.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun CostSummaryCard(
-    totalCost: Long,
-    numberFormat: NumberFormat
+private fun StatItem(
+    icon: ImageVector,
+    value: String,
+    label: String
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
-    ) {
-        Row(
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
         ) {
-            Column {
-                Text(
-                    text = "Total Pengeluaran",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Rp ${numberFormat.format(totalCost)}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
             Icon(
-                imageVector = Icons.Outlined.AttachMoney,
+                imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.8f)
             )
         }
     }
@@ -378,6 +419,18 @@ private fun VehicleFilterRow(
                 selected = selectedVehicleId == vehicle.id,
                 onClick = { onSelectVehicle(vehicle.id) },
                 label = { Text(vehicle.name) },
+                leadingIcon = if (selectedVehicleId == vehicle.id) {
+                    {
+                        Icon(
+                            imageVector = if (vehicle.type == VehicleType.MOTOR)
+                                Icons.Outlined.TwoWheeler
+                            else
+                                Icons.Outlined.DirectionsCar,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null,
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimary
@@ -388,11 +441,12 @@ private fun VehicleFilterRow(
 }
 
 @Composable
-private fun VehicleStatsCard(
+private fun VehicleStatsCardModern(
     vehicleStats: VehicleStats,
     numberFormat: NumberFormat
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val vehicleColor = if (vehicleStats.vehicle.type == VehicleType.MOTOR) PrimaryBlue else MaterialTheme.colorScheme.secondary
 
     Card(
         modifier = Modifier
@@ -400,10 +454,11 @@ private fun VehicleStatsCard(
             .clip(RoundedCornerShape(16.dp))
             .clickable { expanded = !expanded }
             .animateContentSize(),
-        shape = (RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -418,14 +473,9 @@ private fun VehicleStatsCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (vehicleStats.vehicle.type == VehicleType.MOTOR)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.secondary
-                            ),
+                            .background(vehicleColor.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -434,64 +484,83 @@ private fun VehicleStatsCard(
                             else
                                 Icons.Outlined.DirectionsCar,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = vehicleColor,
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column {
                         Text(
                             text = vehicleStats.vehicle.name,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = "${vehicleStats.vehicle.brand} ${vehicleStats.vehicle.model}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Speed,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${numberFormat.format(vehicleStats.vehicle.currentKm)} km",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = if (expanded) "Sembunyikan" else "Tampilkan",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (expanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "${vehicleStats.serviceCount}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = vehicleColor
                         )
                         Text(
-                            text = "Servis",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "servis",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Rp ${numberFormat.format(vehicleStats.totalCost)}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                        Text(
-                            text = "Total Biaya",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                        contentDescription = if (expanded) "Sembunyikan" else "Tampilkan",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    StatColumn(
+                        value = "Rp ${numberFormat.format(vehicleStats.totalCost)}",
+                        label = "Total Biaya",
+                        color = SuccessGreen
+                    )
+                    StatColumn(
+                        value = if (vehicleStats.serviceCount > 0) {
+                            "Rp ${numberFormat.format(vehicleStats.totalCost / vehicleStats.serviceCount)}"
+                        } else "Rp 0",
+                        label = "Rata-rata",
+                        color = WarningAmber
+                    )
                 }
             }
         }
@@ -499,23 +568,43 @@ private fun VehicleStatsCard(
 }
 
 @Composable
-private fun ServiceTypeChart(
-    serviceTypes: List<Pair<ServiceType, Int>>,
-    totalServices: Int
+private fun StatColumn(
+    value: String,
+    label: String,
+    color: Color
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
-    val teriaryColor = MaterialTheme.colorScheme.tertiary
-    val colors = listOf(primaryColor, secondaryColor, teriaryColor)
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ServiceTypeChartModern(
+    serviceTypes: List<Pair<ServiceType, Int>>,
+    totalServices: Int,
+    numberFormat: NumberFormat
+) {
+    val colors = listOf(PrimaryBlue, SuccessGreen, WarningAmber, MaterialTheme.colorScheme.tertiary)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp)),
-        shape = (RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -523,45 +612,27 @@ private fun ServiceTypeChart(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Canvas(
-                modifier = Modifier
-                    .size(120.dp)
-                    .padding(8.dp)
-            ) {
-                var startAngle = -90f
-                serviceTypes.forEachIndexed { index, (_, count) ->
-                    val sweepAngle = (count.toFloat() / totalServices) * 360f
-                    drawArc(
-                        color = colors[index % colors.size],
-                        startAngle = startAngle,
-                        sweepAngle = sweepAngle,
-                        useCenter = false,
-                        style = Stroke(width = 24.dp.toPx(), cap = StrokeCap.Round),
-                        size = Size(size.width, size.height)
-                    )
-                    startAngle += sweepAngle
-                }
-            }
+            // Animated Donut Chart
+            DonutChart(
+                serviceTypes = serviceTypes,
+                totalServices = totalServices,
+                colors = colors,
+                modifier = Modifier.size(140.dp)
+            )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Legend
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                serviceTypes.forEachIndexed { index, (type, _) ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(colors[index % colors.size])
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = type.displayName,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
+                serviceTypes.take(4).forEachIndexed { index, (type, count) ->
+                    LegendItem(
+                        color = colors[index % colors.size],
+                        label = type.displayName,
+                        count = count
+                    )
                 }
             }
         }
@@ -569,62 +640,73 @@ private fun ServiceTypeChart(
 }
 
 @Composable
-private fun ServiceTypeRow(
-    serviceType: ServiceType,
-    count: Int,
+private fun DonutChart(
+    serviceTypes: List<Pair<ServiceType, Int>>,
     totalServices: Int,
-    numberFormat: NumberFormat
+    colors: List<Color>,
+    modifier: Modifier = Modifier
 ) {
-    val percentage = (count.toFloat() / totalServices * 100).toInt()
-    val maxBarWidth = 1f
+    var animationPlayed by remember { mutableStateOf(false) }
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (animationPlayed) 1f else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "donut"
+    )
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp)),
-        shape = (RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = serviceType.displayName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "$count kali",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth((count.toFloat() / totalServices).coerceAtMost(maxBarWidth))
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-            }
+    LaunchedEffect(Unit) {
+        animationPlayed = true
+    }
+
+    Canvas(modifier = modifier.padding(8.dp)) {
+        val strokeWidth = 28.dp.toPx()
+        val radius = (size.minDimension - strokeWidth) / 2
+        val center = Offset(size.width / 2, size.height / 2)
+
+        var startAngle = -90f
+        serviceTypes.forEachIndexed { index, (_, count) ->
+            val sweepAngle = (count.toFloat() / totalServices) * 360f * animatedProgress
+            drawArc(
+                color = colors[index % colors.size],
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2)
+            )
+            startAngle += sweepAngle
         }
+    }
+}
+
+@Composable
+private fun LegendItem(
+    color: Color,
+    label: String,
+    count: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+        Text(
+            text = "$count",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
