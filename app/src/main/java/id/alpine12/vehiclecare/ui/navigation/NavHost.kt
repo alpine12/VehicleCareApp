@@ -1,5 +1,7 @@
 package id.alpine12.vehiclecare.ui.navigation
 
+import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -78,6 +80,7 @@ fun VehicleCareNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    Log.d("NavHost", "VehicleCareNavHost: ")
 
     val showBottomBar = listOf(
         Screen.Home.route,
@@ -114,7 +117,8 @@ fun VehicleCareNavHost() {
                     }
                 }
             }
-        }
+        },
+        contentWindowInsets = WindowInsets(0,0,0,0)
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -188,7 +192,8 @@ fun VehicleCareNavHost() {
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToEditVehicle = { navController.navigate(Screen.EditVehicle.createRoute(vehicleId)) },
                     onNavigateToAddService = { navController.navigate(Screen.AddService.createRoute(vehicleId)) },
-                    onNavigateToAddReminder = { navController.navigate(Screen.AddReminder.createRoute(vehicleId)) }
+                    onNavigateToAddReminder = { navController.navigate(Screen.AddReminder.createRoute(vehicleId)) },
+                    onNavigateToHistory = { navController.navigate(Screen.History.route) }
                 )
             }
 

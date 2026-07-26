@@ -80,7 +80,7 @@ class StatsViewModel @Inject constructor(
                     VehicleStats(
                         vehicle = vehicle,
                         serviceCount = vehicleServices.size,
-                        totalCost = vehicleServices.mapNotNull { it.cost?.toLong() }.sum()
+                        totalCost = vehicleServices.sumOf { it.cost?.toLong() ?: 0L }
                     )
                 }.sortedByDescending { it.totalCost }
 

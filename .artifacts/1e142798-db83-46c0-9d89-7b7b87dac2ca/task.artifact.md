@@ -1,0 +1,3 @@
+- [x] Fix type mismatch in `VehicleDetailScreen.kt`
+- [x] Fix type mismatch in `HomeViewModel.kt`
+- [x] Verify fixes with `analyze_file`

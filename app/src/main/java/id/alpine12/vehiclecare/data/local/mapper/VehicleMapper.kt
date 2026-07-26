@@ -13,6 +13,7 @@ fun VehicleEntity.toDomain(): Vehicle = Vehicle(
     year = year,
     licensePlate = licensePlate,
     currentKm = currentKm,
+    oilIntervalKm = oilIntervalKm,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -26,6 +27,7 @@ fun Vehicle.toEntity(): VehicleEntity = VehicleEntity(
     year = year,
     licensePlate = licensePlate,
     currentKm = currentKm,
+    oilIntervalKm = oilIntervalKm,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

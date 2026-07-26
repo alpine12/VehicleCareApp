@@ -5,6 +5,7 @@ import androidx.room.Room
 import id.alpine12.vehiclecare.data.local.dao.ReminderDao
 import id.alpine12.vehiclecare.data.local.dao.ServiceRecordDao
 import id.alpine12.vehiclecare.data.local.dao.VehicleDao
+import id.alpine12.vehiclecare.data.local.database.MIGRATION_1_2
 import id.alpine12.vehiclecare.data.local.database.VehicleCareDatabase
 import dagger.Module
 import dagger.Provides
@@ -24,7 +25,9 @@ object DatabaseModule {
             context,
             VehicleCareDatabase::class.java,
             VehicleCareDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     @Provides

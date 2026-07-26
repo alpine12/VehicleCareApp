@@ -26,6 +26,6 @@ interface ReminderDao {
     suspend fun updateReminder(reminder: ReminderEntity)
     @Query("DELETE FROM reminders WHERE id = :id")
     suspend fun deleteReminderById(id: Long)
-    @Query("UPDATE reminders SET isCompleted = 1 WHERE id = :id")
+    @Query("UPDATE reminders SET isCompleted = 1, isActive = 0 WHERE id = :id")
     suspend fun markAsCompleted(id: Long)
 }

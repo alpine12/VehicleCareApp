@@ -19,6 +19,9 @@
 -keep class io.coilkt.** { *; }
 -dontwarn io.coilkt.**
 
+# Error Prone (used by Room/annotations, safe to ignore)
+-dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
+
 # Kotlin Coroutines & Flow
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
